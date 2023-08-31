@@ -3,12 +3,14 @@ import openpyscad as ops
 f = open("kvadr.scad", "r")
 f = f.read()
 
-def find_list(f: str) -> list:
-    f = f[:f.index(";")]
-    print(f)
+def find_list(no_list: str) -> list:
+    no_list = no_list[:no_list.index(";")]
+    no_list = no_list[no_list.index("["):]
+    return list(no_list)
 
 
-Points = find_list(f)
+Points = list(find_list(f))
+print(type(Points))
 
 
 
