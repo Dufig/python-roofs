@@ -1,16 +1,18 @@
-# This is a sample Python script.
+import openpyscad as ops
 
-# Press Shift+F10 to execute it or replace it with your code.
-# Press Double Shift to search everywhere for classes, files, tool windows, actions, and settings.
+f = open("kvadr.scad", "r")
+f = f.read()
+
+def find_list(f: str) -> list:
+    f = f[:f.index(";")]
+    print(f)
 
 
-def print_hi(name):
-    # Use a breakpoint in the code line below to debug your script.
-    print(f'Hi, {name}')  # Press Ctrl+F8 to toggle the breakpoint.
+Points = find_list(f)
 
 
-# Press the green button in the gutter to run the script.
+
+
+
 if __name__ == '__main__':
-    print_hi('PyCharm')
-
-# See PyCharm help at https://www.jetbrains.com/help/pycharm/
+    pass
