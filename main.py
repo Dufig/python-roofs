@@ -3,15 +3,17 @@ import numpy as np                 # v 1.19.2
 import matplotlib.pyplot as plt    # v 3.3.2
 import math
 
+height = 0
 f = open("better_kvadr.scad", "r")
 f = f.read()
 drawing = True
 
 
 class Line:
-    def __init__(self, point1: list, point2: list, border: bool):
+    def __init__(self, point1: list, point2: list, beginning: list, border: bool):
         self.point1 = point1
         self.point2 = point2
+        self.beginning = beginning
         self.border = border
 
     def slope(self):
@@ -137,6 +139,7 @@ def find_faces(no_list: str) -> list:
 
 
 def not_top_faces(points: list, faces: list) -> list:
+    global height
     heights = []
     bad_points = []
     good_faces = []
@@ -153,6 +156,7 @@ def not_top_faces(points: list, faces: list) -> list:
                 good_faces.append(face)
                 break
 
+    height = heights[len(heights) - 1] + heights[len(heights) - 1] - heights[0]
     return good_faces
 
 
@@ -185,15 +189,17 @@ def find_angle(a: list, mid: list, c: list):
         xc = xc * ratio
         yc = yc * ratio
     plt.plot([xc + xa + xmid, - xc - xa + xmid], [ya + yc + ymid, - ya - yc + ymid], c='r', ls='-', lw=1.5, alpha=0.5)
+    Lines.append(Line([xc + xa + xmid, ya + yc + ymid, height], [- xc - xa + xmid, - ya - yc + ymid, height], mid,
+                      False))
 
 
 def border_lines(points: list) -> list:
     lines = []
     for point in points:
         if points.index(point) == len(points) - 1:
-            lines.append(Line(point, Points[0], True))
+            lines.append(Line(point, Points[0], point, True))
         else:
-            lines.append(Line(point, Points[Points.index(point) + 1], True))
+            lines.append(Line(point, Points[Points.index(point) + 1], point, True))
 
     return lines
 
@@ -208,6 +214,84 @@ def setup_angles(points: list):
             find_angle(points[points.index(point) - 1], points[points.index(point)], points[points.index(point) + 1])
 
 
+def find_intersection(line1, line2):
+    xdiff = (line1[0][0] - line1[1][0], line2[0][0] - line2[1][0])
+    ydiff = (line1[0][1] - line1[1][1], line2[0][1] - line2[1][1])
+
+    def det(a, b):
+        return a[0] * b[1] - a[1] * b[0]
+
+    div = det(xdiff, ydiff)
+    if div == 0:
+        x = line1[0][0]
+        y = line1[0][1]
+    else:
+        d = (det(*line1), det(*line2))
+        x = det(d, xdiff) / div
+        y = det(d, ydiff) / div
+    return x, y
+
+
+def find_lines(lines):
+    temp_points = []
+    for line in lines:
+        other_points = []
+        if line.border is True:
+            pass
+        begin = line.beginning
+        for borderline in lines:
+            if (borderline.point1 == begin or borderline.point2 == begin) and borderline.border:
+                if borderline.point1 == begin:
+                    other_points.append(borderline.point2)
+                else:
+                    other_points.append(borderline.point1)
+        print(other_points, "other points")
+        for interline in lines:
+            if interline == line:
+                pass
+            possible_points = []
+            for point in other_points:
+                if point == interline.beginning and not interline.border:
+                    fake_line_1 = [[line.point1[0], line.point1[1]], [line.point2[0], line.point2[1]]]
+                    fake_line_2 = [[interline.point1[0], interline.point1[1]], [interline.point2[0],
+                                                                                interline.point2[1]]]
+                    intersect_point = list(find_intersection(fake_line_1, fake_line_2))
+                    intersect_point.append(height)
+                    possible_points.append(intersect_point)
+
+
+            len_inter = 999999999999
+            true_point = []
+            for point in possible_points:
+                if math.sqrt(math.pow((point[0] - line.beginning[0]), 2)
+                             + math.pow(point[1] - line.beginning[1], 2)) < len_inter:
+                    len_inter = math.sqrt(math.pow((point[0] - line.beginning[0]), 2)
+                             + math.pow(point[1] - line.beginning[1], 2))
+                    true_point = point
+                    print(true_point, len_inter)
+                    for number in true_point:
+                        true_point[true_point.index(number)] = round(number) #fix this shit if you round it it WILL get fucked up
+                        print(number, "numero")
+            comp = True
+            if true_point != []:
+                for comparing in Points:
+                    if comparing[0] - true_point[0] == 0 and comparing[1] - true_point[1] == 0:
+                        comp = False
+                if comp:
+                    print(comparing[0] - true_point[0], comparing[1] - true_point[1], "lol")
+                    line.point1 = line.beginning
+                    line.point2 = true_point
+                    temp_points.append(true_point)
+                    draw_line(line)
+
+    for point in temp_points:
+        Points.append(point)
+
+
+def draw_line(line: Line):
+    plt.plot([line.point1[0], line.point2[0]], [line.point1[1], line.point2[1]], c='k', ls='-.', lw=1.5, alpha=0.5)
+
+
 if __name__ == '__main__':
     Points = list(find_points(f))
     Faces = list(find_faces(f))
@@ -215,9 +299,12 @@ if __name__ == '__main__':
     worthless_points(Points)
     Lines = list(border_lines(Points))
     for line in Lines:
-        print(line.point1, line.point2, line.border, line.slope())
+        print(line.point1, line.point2, line.border, line.beginning, line.slope())
     draw(Points)
     setup_angles(Points)
-    if drawing:
+    find_lines(Lines)
+    print(Points)
 
+
+    if drawing:
         plt.show()
