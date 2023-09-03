@@ -1,12 +1,25 @@
-import numpy
-import openpyscad as ops
+# import openpyscad as ops
 import numpy as np                 # v 1.19.2
 import matplotlib.pyplot as plt    # v 3.3.2
 import math
 
-f = open("kvadr.scad", "r")
+f = open("better_kvadr.scad", "r")
 f = f.read()
 drawing = True
+
+
+class Line:
+    def __init__(self, point1: list, point2: list, border: bool):
+        self.point1 = point1
+        self.point2 = point2
+        self.border = border
+
+    def slope(self):
+        try:
+            slope = (self.point2[1] - self.point1[1]) / (self.point2[0] - self.point1[0])
+            return slope
+        except ZeroDivisionError:
+            return (self.point2[1] - self.point1[1]) / (abs(self.point2[1] - self.point1[1])) * 922336854775807
 
 
 def draw(points: list):
@@ -158,33 +171,41 @@ def worthless_points(points: list) -> list:
     return bad_points
 
 
-def find_angle(a: list, mid: list, c: list) -> list:
-    xa = a[0]
-    ya = a[1]
+def find_angle(a: list, mid: list, c: list):
+    xa = a[0] - mid[0]
+    ya = a[1] - mid[1]
     xmid = mid[0]
     ymid = mid[1]
-    xc = c[0]
-    yc = c[1]
-  #  alpha = math.degrees(math.asin((ya - ymid) / math.sqrt(math.pow((xa - xmid), 2) + math.pow((ya - ymid), 2))))
-    alpha = math.degrees(math.asin((-1)))
-    if 90 > alpha > 0 > xa - xmid:
-        alpha = 180 - alpha
-    if 0 > alpha > -90 and xa - xmid < 0:
-        alpha = 180 - alpha
-    if alpha < 0:
-        alpha = 360 - alpha
+    xc = c[0] - mid[0]
+    yc = c[1] - mid[1]
+    len_a = math.sqrt(math.pow(xa, 2) + math.pow(ya, 2))
+    len_c = math.sqrt(math.pow(xc, 2) + math.pow(yc, 2))
+    ratio = len_a / len_c
+    if ratio != 1:
+        xc = xc * ratio
+        yc = yc * ratio
+    plt.plot([xc + xa + xmid, - xc - xa + xmid], [ya + yc + ymid, - ya - yc + ymid], c='r', ls='-', lw=1.5, alpha=0.5)
 
 
+def border_lines(points: list) -> list:
+    lines = []
+    for point in points:
+        if points.index(point) == len(points) - 1:
+            lines.append(Line(point, Points[0], True))
+        else:
+            lines.append(Line(point, Points[Points.index(point) + 1], True))
 
-    beta = math.degrees(math.asin((yc - ymid) / math.sqrt(math.pow((xc - xmid), 2) + math.pow((yc - ymid), 2))))
-    if 90 > beta > 0 > xa - xmid:
-        beta = 180 - beta
-    if 0 > beta > -90 and xa - xmid < 0:
-        beta = 180 - beta
-    if beta < 0:
-        beta = 360 - beta
+    return lines
 
-    print(alpha, beta)
+
+def setup_angles(points: list):
+    for point in points:
+        if points.index(point) == 0:
+            find_angle(points[len(points) - 1], points[0], points[1])
+        elif points.index(point) == len(points) - 1:
+            find_angle(points[len(points) - 2], points[len(points) - 1], points[0])
+        else:
+            find_angle(points[points.index(point) - 1], points[points.index(point)], points[points.index(point) + 1])
 
 
 if __name__ == '__main__':
@@ -192,7 +213,11 @@ if __name__ == '__main__':
     Faces = list(find_faces(f))
     Faces = list(not_top_faces(Points, Faces))
     worthless_points(Points)
-    find_angle(Points[0], Points[1], Points[2])
+    Lines = list(border_lines(Points))
+    for line in Lines:
+        print(line.point1, line.point2, line.border, line.slope())
+    draw(Points)
+    setup_angles(Points)
     if drawing:
-        draw(Points)
+
         plt.show()
