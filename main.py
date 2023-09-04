@@ -23,6 +23,11 @@ class Line:
         except ZeroDivisionError:
             return (self.point2[1] - self.point1[1]) / (abs(self.point2[1] - self.point1[1])) * 922336854775807
 
+    def __eq__(self, other):
+        if self.point1 == other.point1 and self.point2 == other.point2 and self.beginning ==\
+                other.beginning and self.border == other.border:
+            return True
+        return False
 
 def draw(points: list):
     # Enter x and y coordinates of points and colors
@@ -233,53 +238,47 @@ def find_intersection(line1, line2):
 
 
 def find_lines(lines):
+    global Points
     temp_points = []
     temp_lines = []
     point_lines = []
+    true_point = []
     for point in Points:
-        for line in lines:
-            if point == line.beginning and not line.border:
-                other_points = []
-                begin = line.beginning
-                for borderline in lines:
-                    if (borderline.point1 == begin or borderline.point2 == begin) and borderline.border:
-                        if borderline.point1 == begin:
-                            other_points.append(borderline.point2)
-                        else:
-                            other_points.append(borderline.point1)
-                for interline in lines:
-                    if interline == line:
-                        pass
-                    possible_points = []
-                    for point in other_points:
-                        if point == interline.beginning and not interline.border:
-                            fake_line_1 = [[line.point1[0], line.point1[1]], [line.point2[0], line.point2[1]]]
-                            fake_line_2 = [[interline.point1[0], interline.point1[1]], [interline.point2[0],
-                                                                                        interline.point2[1]]]
-                            intersect_point = list(find_intersection(fake_line_1, fake_line_2))
-                            intersect_point.append(height)
-                            possible_points.append(intersect_point)
+        print(point)
+        if Points.index(point) == 0:
+            point_lines = [Points[len(Points) - 1],  Points[1]]
+        elif Points.index(point) == len(Points) - 1:
+            point_lines = [Points[Points.index(point) - 1], Points[0]]
+        else:
+            point_lines = [Points[Points.index(point) - 1], Points[Points.index(point) + 1]]
 
-
+        for angle_line in lines:
+            for line_point in point_lines: # the first point doesnt work for some reason
+                if point == angle_line.beginning and not angle_line.border:
+                    other_points = []
                     len_inter = 999999999999
-                    true_point = []
-                    for point in possible_points:
-                        if math.sqrt(math.pow((point[0] - line.beginning[0]), 2)
-                                     + math.pow(point[1] - line.beginning[1], 2)) < len_inter:
-                            len_inter = math.sqrt(math.pow((point[0] - line.beginning[0]), 2)
-                                     + math.pow(point[1] - line.beginning[1], 2))
-                            true_point = point
-                    comp = True
-                    if true_point != [] and not line.border:
-                        for comparing in Points:
-                            if comparing[0] - round(true_point[0]) == 0 and comparing[1] - round(true_point[1]) == 0:
-                                comp = False
-                        if comp:
-                            new_line = Line(line.beginning, true_point, line.beginning, False)
-                            temp_points.append(true_point)
-                            temp_lines.append(new_line)
-                            draw_line(new_line)
-                            print(new_line.point1, new_line.point2, new_line.beginning)
+                    for interline in lines:
+                        if interline == angle_line:
+                            break
+                        if not interline.border and (interline.beginning == point_lines[0]
+                                                     or interline.beginning == point_lines[1]):
+                            intersect = list(find_intersection([[angle_line.point1[0], angle_line.point1[1]],
+                                                                [angle_line.point2[0], angle_line.point2[1]]],
+                                                                [[interline.point1[0], interline.point1[1]],
+                                                                 [interline.point2[0], interline.point2[1]]]))
+                            plt.scatter(intersect[0], intersect[1], c='r')
+                            intersect.append(height)
+                            if math.sqrt(math.pow((intersect[0] - angle_line.beginning[0]), 2)
+                                         + math.pow(intersect[1] - angle_line.beginning[1], 2)) < len_inter:
+                                len_inter = math.sqrt(math.pow((intersect[0] - angle_line.beginning[0]), 2)
+                                         + math.pow(intersect[1] - angle_line.beginning[1], 2))
+                                true_point = intersect
+
+                    if true_point != []:
+                        new_line = Line(angle_line.beginning, true_point, angle_line.beginning, False)
+                        temp_points.append(true_point)
+                        temp_lines.append(new_line)
+                        draw_line(new_line)
 
     for point in temp_points:
         Points.append(point)
@@ -303,12 +302,10 @@ if __name__ == '__main__':
 
     draw(Points)
     setup_angles(Points)
-    for line in Lines:
-        print(line.point1, line.point2, line.border, line.beginning, line.slope())
+  #  for line in Lines:
+ #       print(line.point1, line.point2, line.border, line.beginning, line.slope())
     find_lines(Lines)
-    for line in Lines:
-        print(line.point1, line.point2, line.border, line.beginning, line.slope())
-    print(Points)
+
 
 
     if drawing:
