@@ -1,6 +1,6 @@
 # import openpyscad as ops
-import numpy as np                 # v 1.19.2
-import matplotlib.pyplot as plt    # v 3.3.2
+import numpy as np  # v 1.19.2
+import matplotlib.pyplot as plt  # v 3.3.2
 import math
 
 height = 0
@@ -24,10 +24,11 @@ class Line:
             return (self.point2[1] - self.point1[1]) / (abs(self.point2[1] - self.point1[1])) * 922336854775807
 
     def __eq__(self, other):
-        if self.point1 == other.point1 and self.point2 == other.point2 and self.beginning ==\
+        if self.point1 == other.point1 and self.point2 == other.point2 and self.beginning == \
                 other.beginning and self.border == other.border:
             return True
         return False
+
 
 def draw(points: list):
     # Enter x and y coordinates of points and colors
@@ -62,7 +63,7 @@ def draw(points: list):
                     c='y')
 
     # Set identical scales for both axes
-    ax.set(xlim=(xmin-1, xmax+1), ylim=(ymin-1, ymax+1), aspect='equal')
+    ax.set(xlim=(xmin - 1, xmax + 1), ylim=(ymin - 1, ymax + 1), aspect='equal')
 
     # Set bottom and left spines as x and y axes of coordinate system
     ax.spines['bottom'].set_position('zero')
@@ -77,15 +78,15 @@ def draw(points: list):
     ax.set_ylabel('y', size=14, labelpad=-21, y=1.02, rotation=0)
 
     # Create custom major ticks to determine position of tick labels
-    x_ticks = np.arange(xmin, xmax+1, ticks_frequency)
-    y_ticks = np.arange(ymin, ymax+1, ticks_frequency)
+    x_ticks = np.arange(xmin, xmax + 1, ticks_frequency)
+    y_ticks = np.arange(ymin, ymax + 1, ticks_frequency)
     ax.set_xticks(x_ticks[x_ticks != 0])
     ax.set_yticks(y_ticks[y_ticks != 0])
 
     # Create minor ticks placed at each integer to enable drawing of minor grid
     # lines: note that this has no effect in this example with ticks_frequency=1
-    ax.set_xticks(np.arange(xmin, xmax+1), minor=True)
-    ax.set_yticks(np.arange(ymin, ymax+1), minor=True)
+    ax.set_xticks(np.arange(xmin, xmax + 1), minor=True)
+    ax.set_yticks(np.arange(ymin, ymax + 1), minor=True)
 
     # Draw major and minor grid lines
     ax.grid(which='both', color='grey', linewidth=1, linestyle='-', alpha=0.2)
@@ -125,7 +126,7 @@ def find_faces(no_list: str) -> list:
     no_list = no_list[no_list.index("[") + 1:no_list.index(";") - 1]
     no_list = no_list + ",L"
     coor = []
-    number = int(no_list.count(",")/no_list.count("["))
+    number = int(no_list.count(",") / no_list.count("["))
     for i in range(no_list.count("[")):
         for j in range(number):
             temp = no_list[:no_list.index(",")]
@@ -153,7 +154,7 @@ def not_top_faces(points: list, faces: list) -> list:
             heights.append(point[2])
     top = max(heights)
     for i in range(len(points)):
-        if not(points[i][2] >= top):
+        if not (points[i][2] >= top):
             bad_points.append(points[i])
     for face in faces:
         for point in face:
@@ -173,7 +174,7 @@ def worthless_points(points: list) -> list:
             heights.append(point[2])
     top = max(heights)
     for i in range(len(points)):
-        if not(points[i][2] >= top):
+        if not (points[i][2] >= top):
             bad_points.append(points[i])
     for point in bad_points:
         points.remove(point)
@@ -181,6 +182,9 @@ def worthless_points(points: list) -> list:
 
 
 def find_angle(a: list, mid: list, c: list):
+    """Finds the angle axis by converting the two lines making up the angle into vectors, making them the same length
+    and adding them up
+    """
     xa = a[0] - mid[0]
     ya = a[1] - mid[1]
     xmid = mid[0]
@@ -193,7 +197,6 @@ def find_angle(a: list, mid: list, c: list):
     if ratio != 1:
         xc = xc * ratio
         yc = yc * ratio
-    plt.plot([xc + xa + xmid, - xc - xa + xmid], [ya + yc + ymid, - ya - yc + ymid], c='r', ls='-', lw=1.5, alpha=0.5)
     Lines.append(Line([xc + xa + xmid, ya + yc + ymid, height], [- xc - xa + xmid, - ya - yc + ymid, height], mid,
                       False))
 
@@ -238,59 +241,61 @@ def find_intersection(line1, line2):
 
 
 def find_lines(lines):
-    global Points
+    """This function finds the intercept of angle axis and proceeds to draw them. It goes through all the points,
+
+    finds the ones next to the point, then angle lines beginning in the point and the intersection that is the closest.
+    You would NOT believe how long it took me to fix all the bugs in this, as a result it is very cluttered.
+    """
+    global Points, Lines
     temp_points = []
     temp_lines = []
-    point_lines = []
     true_point = []
     for point in Points:
-        print(point)
         if Points.index(point) == 0:
-            point_lines = [Points[len(Points) - 1],  Points[1]]
+            point_lines = [Points[len(Points) - 1], Points[1]]
         elif Points.index(point) == len(Points) - 1:
             point_lines = [Points[Points.index(point) - 1], Points[0]]
         else:
             point_lines = [Points[Points.index(point) - 1], Points[Points.index(point) + 1]]
 
         for angle_line in lines:
-            for line_point in point_lines: # the first point doesnt work for some reason
-                if point == angle_line.beginning and not angle_line.border:
-                    other_points = []
-                    len_inter = 999999999999
-                    for interline in lines:
-                        if interline == angle_line:
-                            break
-                        if not interline.border and (interline.beginning == point_lines[0]
-                                                     or interline.beginning == point_lines[1]):
-                            intersect = list(find_intersection([[angle_line.point1[0], angle_line.point1[1]],
-                                                                [angle_line.point2[0], angle_line.point2[1]]],
-                                                                [[interline.point1[0], interline.point1[1]],
-                                                                 [interline.point2[0], interline.point2[1]]]))
-                            plt.scatter(intersect[0], intersect[1], c='r')
-                            intersect.append(height)
-                            if math.sqrt(math.pow((intersect[0] - angle_line.beginning[0]), 2)
-                                         + math.pow(intersect[1] - angle_line.beginning[1], 2)) < len_inter:
-                                len_inter = math.sqrt(math.pow((intersect[0] - angle_line.beginning[0]), 2)
-                                         + math.pow(intersect[1] - angle_line.beginning[1], 2))
-                                true_point = intersect
+            if point == angle_line.beginning and not angle_line.border:
+                len_inter = 999999999999
+                for interline in Lines:
+                    if not interline.border and (interline.beginning == point_lines[0]
+                                                 or interline.beginning == point_lines[1]):
+                        intersect = list(find_intersection([[angle_line.point1[0], angle_line.point1[1]],
+                                                            [angle_line.point2[0], angle_line.point2[1]]],
+                                                           [[interline.point1[0], interline.point1[1]],
+                                                            [interline.point2[0], interline.point2[1]]]))
 
-                    if true_point != []:
-                        new_line = Line(angle_line.beginning, true_point, angle_line.beginning, False)
-                        temp_points.append(true_point)
-                        temp_lines.append(new_line)
-                        draw_line(new_line)
+                        intersect.append(height)
+                        if math.sqrt(math.pow((intersect[0] - angle_line.beginning[0]), 2)
+                                     + math.pow(intersect[1] - angle_line.beginning[1], 2)) < len_inter:
+                            len_inter = math.sqrt(math.pow((intersect[0] - angle_line.beginning[0]), 2)
+                                                  + math.pow(intersect[1] - angle_line.beginning[1], 2))
+                            true_point = intersect
+
+                if true_point:
+                    new_line = Line(angle_line.beginning, true_point, angle_line.beginning, False)
+                    temp_points.append(true_point)
+                    temp_lines.append(new_line)
+                    draw_line(new_line)
+                    plt.scatter(true_point[0], true_point[1], c='r')
 
     for point in temp_points:
         Points.append(point)
-    i = 0
-    for line in Lines:
+    for axis_line in Lines:
         for true_line in temp_lines:
-            if line.beginning == true_line.point1 and line.beginning == true_line.beginning and not true_line.border:
-                line = true_line
+            if axis_line.beginning[0] == true_line.point1[0] and axis_line.beginning[1] == true_line.point1[1] \
+                    and not axis_line.border:
+                axis_line.beginning = true_line.beginning
+                axis_line.point1 = true_line.point1
+                axis_line.point2 = true_line.point2
 
 
-def draw_line(line: Line):
-    plt.plot([line.point1[0], line.point2[0]], [line.point1[1], line.point2[1]], c='k', ls=':', lw=1.5, alpha=0.5)
+def draw_line(aline: Line):
+    plt.plot([aline.point1[0], aline.point2[0]], [aline.point1[1], aline.point2[1]], c='k', ls='-', lw=1.5, alpha=0.5)
 
 
 if __name__ == '__main__':
@@ -299,14 +304,14 @@ if __name__ == '__main__':
     Faces = list(not_top_faces(Points, Faces))
     worthless_points(Points)
     Lines = list(border_lines(Points))
-
+    '''This all above is just basic file formatting, getting coordinates from the file and things as such, nothing 
+    too important but it does take up a lot of space as I couldn't find a python library that would fit my needs'''
     draw(Points)
     setup_angles(Points)
-  #  for line in Lines:
- #       print(line.point1, line.point2, line.border, line.beginning, line.slope())
+
     find_lines(Lines)
-
-
+    for line in Lines:
+        print(line.point1, line.point2, line.border, line.beginning, line.slope())
 
     if drawing:
         plt.show()
