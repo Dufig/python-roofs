@@ -309,7 +309,7 @@ def connect_roof_points():
             draw_line(roof_line, 'r')
         for line in bordering_lines:
             print(line.point1, line.point2)
-#rip
+
 
 def shorten_line(long_line: Line, point: list):
     if (math.sqrt(math.pow((point[0] - long_line.point1[0]), 2) + math.pow(point[1] - long_line.point1[1], 2)) <
