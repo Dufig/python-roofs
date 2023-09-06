@@ -6,7 +6,7 @@ import math
 height = 0
 f = open("better_kvadr.scad", "r")
 f = f.read()
-drawing = True
+drawing = False
 roof_points = []
 rounding_error = 0.000000000000005
 
@@ -183,7 +183,6 @@ def worthless_points(points: list) -> list:
             bad_points.append(points[i])
     for point in bad_points:
         points.remove(point)
-    bad_points.append(points)
     return bad_points
 
 
@@ -329,8 +328,6 @@ def connect_roof_points():
     if len(roof_points) == 2:
         Lines.append(Line(roof_points[0], roof_points[1], roof_points[0], False))
         draw_line(Lines[len(Lines) - 1], 'k')
-        worthno_points.append(roof_points[0])
-        worthno_points.append(roof_points[1])
         Points.append(roof_points[0])
         Points.append(roof_points[1])
         return None
@@ -396,7 +393,9 @@ def new_faces():
         recursion = list(recursion_maze(border_line.point2, border_line.point1, [border_line.point2]))
         for point in recursion:
             face_points.append(point)
-        for point in
+        for point in face_points:
+            indexes.append(Points.index(point))
+        Faces.append(indexes)
 
 
 def recursion_maze(start_point: list, finish_point: list, passed_points: list[list]):
@@ -440,6 +439,12 @@ def distance(point1: list, point2: list):
     return math.sqrt(math.pow((point1[0] - point2[0]), 2) + math.pow(point1[1] - point2[1], 2))
 
 
+def rebuild_points():
+    global worthno_points, Points
+    for point in Points:
+        worthno_points.append(point)
+    Points = worthno_points
+
 if __name__ == '__main__':
     Points = list(find_points(f))
     Faces = list(find_faces(f))
@@ -455,7 +460,10 @@ if __name__ == '__main__':
 #    for line in Lines:
 #        print(line.point1, line.point2, line.beginning, line.border)
     connect_roof_points()
+
+    rebuild_points()
     new_faces()
     print(Points)
+    print(Faces)
     if drawing:
         plt.show()
