@@ -8,6 +8,7 @@ f = open("better_kvadr.scad", "r")
 f = f.read()
 drawing = True
 roof_points = []
+rounding_error = 0.000000000000005
 
 
 class Line:
@@ -29,6 +30,9 @@ class Line:
                 other.beginning and self.border == other.border:
             return True
         return False
+
+    def __str__(self):
+        return str(self.point1) + str(self.point2) + str(self.beginning) + str(self.border)
 
 
 def draw(points: list):
@@ -179,6 +183,7 @@ def worthless_points(points: list) -> list:
             bad_points.append(points[i])
     for point in bad_points:
         points.remove(point)
+    bad_points.append(points)
     return bad_points
 
 
@@ -262,21 +267,57 @@ def find_lines(lines):
 
                 if true_point:
                     new_line = Line(angle_line.beginning, true_point, angle_line.beginning, False)
-                    temp_points.append(true_point)
                     temp_lines.append(new_line)
-                    draw_line(new_line, 'k')
-                    plt.scatter(true_point[0], true_point[1], c='r')
+                    draw_line(new_line, 'r')
 
     for point in temp_points:
         Points.append(point)
         roof_points.append(point)
+    deround_lines(temp_lines)
+    for drawn_line in temp_lines:
+        if temp_points.count(drawn_line.point2) == 0:
+            temp_points.append(drawn_line.point2)
+            roof_points.append(drawn_line.point2)
+            plt.scatter(drawn_line.point2[0], drawn_line.point2[1], c='r')
     for axis_line in Lines:
         for true_line in temp_lines:
-            if axis_line.beginning[0] == true_line.point1[0] and axis_line.beginning[1] == true_line.point1[1] \
-                    and not axis_line.border:
+            if axis_line.beginning == true_line.point1 and not axis_line.border:
                 axis_line.beginning = true_line.beginning
                 axis_line.point1 = true_line.point1
                 axis_line.point2 = true_line.point2
+
+
+def deround_lines(lines_list: list[Line]):
+    global rounding_error
+    for first_line in lines_list:
+        list1 = [first_line.point1, first_line.point2]
+        for second_line in lines_list:
+            list2 = [second_line.point1, second_line.point2]
+            for point1 in list1:
+                for point2 in list2:
+                    if abs(point1[0] - point2[0]) < rounding_error and abs(point1[1] - point2[1]) < rounding_error:
+                        if first_line.point1 == point1:
+                            first_line.point1 = point2
+                        elif first_line.point1 == point2:
+                            first_line.point2 = point2
+                        elif second_line.point1 == point2:
+                            second_line.point1 = point1
+                        elif second_line.point2 == point2:
+                            second_line.point2 = point1
+
+
+def deround(bad_points: list):
+    global rounding_error
+    for point in bad_points:
+        if bad_points.count(point) > 1:
+            bad_points.remove(point)
+    for first_point in bad_points:
+        for second_point in bad_points:
+            if first_point == second_point:
+                pass
+            elif abs(first_point[0] - second_point[0]) < rounding_error and abs(first_point[1] - second_point[1]) < \
+               rounding_error:
+                bad_points.remove(first_point)
 
 
 def draw_line(aline: Line, color):
@@ -285,11 +326,19 @@ def draw_line(aline: Line, color):
 
 def connect_roof_points():
     global roof_points, Points, Lines
+    if len(roof_points) == 2:
+        Lines.append(Line(roof_points[0], roof_points[1], roof_points[0], False))
+        draw_line(Lines[len(Lines) - 1], 'k')
+        worthno_points.append(roof_points[0])
+        worthno_points.append(roof_points[1])
+        Points.append(roof_points[0])
+        Points.append(roof_points[1])
+        return None
     bordering_lines = []
     for point in roof_points:
         bordering_points = []
         for connecting_line in Lines:
-            if connecting_line.point2 == point:
+            if connecting_line.point2 == point and connecting_line.point1 not in roof_points:
                 bordering_points.append(connecting_line.point1)
         for border_point in bordering_points:
             for border_line in Lines:
@@ -298,14 +347,13 @@ def connect_roof_points():
                         bordering_lines.append(border_line)
                     else:
                         bordering_lines.remove(border_line)
-        print(point)
         if len(bordering_lines) == 2:
             line1 = bordering_lines[0]
             line2 = bordering_lines[1]
-            roof_line = find_angle(line1.point1, line_intersecting(line1, line2), line2.point1)
+            roof_line = find_angle(line1.point1, line_intersecting(line1, line2), line2.point2)
             roof_line.beginning = point
             roof_line = shorten_line(roof_line, point)
-            print(roof_line.point1, roof_line.point2, point)
+
             draw_line(roof_line, 'r')
         for line in bordering_lines:
             print(line.point1, line.point2)
@@ -336,11 +384,67 @@ def line_intersecting(line1: Line, line2: Line):
     return [x, y]
 
 
+def new_faces():
+    global Lines, Points, Faces
+    true_lines = []
+    for line in Lines:
+        if line.border:
+            true_lines.append(line)
+    for border_line in true_lines:
+        face_points = [border_line.point1]
+        indexes = []
+        recursion = list(recursion_maze(border_line.point2, border_line.point1, [border_line.point2]))
+        for point in recursion:
+            face_points.append(point)
+        for point in
+
+
+def recursion_maze(start_point: list, finish_point: list, passed_points: list[list]):
+    global Points
+    if connected(start_point, finish_point) and start_point not in passed_points:
+        passed_points.append(start_point)
+        return passed_points
+    connect_pointss = []
+    close_point = []
+    for point in Points:
+        if point == start_point or point == finish_point:
+            continue
+        if point in passed_points:
+            continue
+        if connected(point, start_point):
+            connect_pointss.append(point)
+
+    for point in connect_pointss:
+        if not close_point:
+            close_point = point
+            continue
+        if distance(point, finish_point) < distance(close_point, finish_point):
+            close_point = point
+    if start_point not in passed_points:
+        passed_points.append(start_point)
+    return recursion_maze(close_point, finish_point, passed_points)
+
+
+
+
+def connected(point1: list, point2: list):
+    global Lines
+    for line in Lines:
+        if line.point1 == point1 or line.point1 == point2:
+            if line. point2 == point1 or line.point2 == point2:
+                return True
+    return False
+
+
+def distance(point1: list, point2: list):
+    return math.sqrt(math.pow((point1[0] - point2[0]), 2) + math.pow(point1[1] - point2[1], 2))
+
+
 if __name__ == '__main__':
     Points = list(find_points(f))
     Faces = list(find_faces(f))
     Faces = list(not_top_faces(Points, Faces))
-    worthless_points(Points)
+    worthno_points = worthless_points(Points)
     Lines = list(border_lines(Points))
     '''This all above is just basic file formatting, getting coordinates from the file and things as such, nothing 
     too important but it does take up a lot of space as I couldn't find a python library that would fit my needs'''
@@ -348,9 +452,10 @@ if __name__ == '__main__':
     setup_angles(Points)
 
     find_lines(Lines)
+#    for line in Lines:
+#        print(line.point1, line.point2, line.beginning, line.border)
     connect_roof_points()
-#   for line in Lines:
-#       print(line.point1, line.point2, line.border, line.beginning, line.slope())
-
+    new_faces()
+    print(Points)
     if drawing:
         plt.show()
