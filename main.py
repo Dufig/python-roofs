@@ -224,30 +224,6 @@ def setup_angles(points: list):
             find_angle(points[points.index(point) - 1], points[points.index(point)], points[points.index(point) + 1])
 
 
-'''
-def prep_intersection(line1: Line, line2: Line):
-    return find_intersection([[line1.point1[0], line1.point1[1]], [line1.point2[0], line1.point2[1]]],
-                             [[line2.point1[0], line2.point1[1]], [line2.point2[0], line2.point2[1]]])
-
-
-def find_intersection(line1, line2):
-    xdiff = (line1[0][0] - line1[1][0], line2[0][0] - line2[1][0])
-    ydiff = (line1[0][1] - line1[1][1], line2[0][1] - line2[1][1])
-
-    def det(a, b):
-        return a[0] * b[1] - a[1] * b[0]
-
-    div = det(xdiff, ydiff)
-    if div == 0:
-        x = line1[0][0]
-        y = line1[0][1]
-    else:
-        d = (det(*line1), det(*line2))
-        x = det(d, xdiff) / div
-        y = det(d, ydiff) / div
-    return x, y '''
-
-
 def find_lines(lines):
     """This function finds the intercept of angle axis and proceeds to draw them. It goes through all the points,
 
@@ -326,13 +302,26 @@ def connect_roof_points():
         if len(bordering_lines) == 2:
             line1 = bordering_lines[0]
             line2 = bordering_lines[1]
-            draw_line(find_angle(line1.point1, line_intersecting(line1, line2), line2.point1), 'r')
+            roof_line = find_angle(line1.point1, line_intersecting(line1, line2), line2.point1)
+            roof_line.beginning = point
+            roof_line = shorten_line(roof_line, point)
+            print(roof_line.point1, roof_line.point2, point)
+            draw_line(roof_line, 'r')
         for line in bordering_lines:
             print(line.point1, line.point2)
 
 
-def y_intercept(P1, slope):
-    return P1[1] - slope * P1[0]
+def shorten_line(long_line: Line, point: list):
+    if (math.sqrt(math.pow((point[0] - long_line.point1[0]), 2) + math.pow(point[1] - long_line.point1[1], 2)) <
+       math.sqrt(math.pow((point[0] - long_line.point1[0]), 2) + math.pow(point[1] - long_line.point1[1], 2))):
+        long_line.point2 = long_line.beginning
+    else:
+        long_line.point1 = long_line.beginning
+    return long_line
+
+
+def y_intercept(p1, slope):
+    return p1[1] - slope * p1[0]
 
 
 def line_intersecting(line1: Line, line2: Line):
@@ -360,8 +349,8 @@ if __name__ == '__main__':
 
     find_lines(Lines)
     connect_roof_points()
- #   for line in Lines:
- #       print(line.point1, line.point2, line.border, line.beginning, line.slope())
+#   for line in Lines:
+#       print(line.point1, line.point2, line.border, line.beginning, line.slope())
 
     if drawing:
         plt.show()
