@@ -4,9 +4,9 @@ import matplotlib.pyplot as plt  # v 3.3.2
 import math
 
 height = 0
-f = open("better_kvadr.scad", "r")
+f = open("6stran_podstava.scad", "r")
 f = f.read()
-drawing = False
+drawing = True
 roof_points = []
 rounding_error = 0.000000000000005
 
@@ -130,8 +130,9 @@ def find_faces(no_list: str) -> list:
     no_list = no_list[no_list.index("Faces"):]
     no_list = no_list[no_list.index("[") + 1:no_list.index(";") - 1]
     no_list = no_list + ",L"
+    print(no_list)
     coor = []
-    number = int(no_list.count(",") / no_list.count("["))
+    number = int(no_list.count(","))
     for i in range(no_list.count("[")):
         for j in range(number):
             temp = no_list[:no_list.index(",")]
@@ -140,6 +141,7 @@ def find_faces(no_list: str) -> list:
                 temp = temp[temp.find("[") + 1:]
             if j == number - 1:
                 temp = temp[:-1]
+            print(temp)
             temp = int(temp)
             coor.append(temp)
             if j == number - 1:
