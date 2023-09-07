@@ -314,8 +314,8 @@ def deround(bad_points: list):
         for second_point in bad_points:
             if first_point == second_point:
                 pass
-            elif abs(first_point[0] - second_point[0]) < rounding_error and abs(first_point[1] - second_point[1]) < \
-               rounding_error:
+            elif abs(first_point[0] - second_point[0]) < rounding_error and abs(first_point[1] - second_point[1]) \
+                    < rounding_error:
                 bad_points.remove(first_point)
 
 
@@ -358,26 +358,32 @@ def connect_roof_points():
 
 def shorten_line(long_line: Line, point: list):
     if (math.sqrt(math.pow((point[0] - long_line.point1[0]), 2) + math.pow(point[1] - long_line.point1[1], 2)) <
-       math.sqrt(math.pow((point[0] - long_line.point1[0]), 2) + math.pow(point[1] - long_line.point1[1], 2))):
+            math.sqrt(math.pow((point[0] - long_line.point1[0]), 2) + math.pow(point[1] - long_line.point1[1], 2))):
         long_line.point2 = long_line.beginning
     else:
         long_line.point1 = long_line.beginning
     return long_line
 
 
-def y_intercept(p1, slope):
-    return p1[1] - slope * p1[0]
-
-
 def line_intersecting(line1: Line, line2: Line):
-    m1 = line1.slope()
-    m2 = line2.slope()
-    if m1 == m2:
-        return None
-    b1 = y_intercept(line1.point1, m1)
-    b2 = y_intercept(line2.point1, m2)
-    x = (b2 - b1) / (m1 - m2)
-    y = m1 * x + b1
+    if line1.slope() == line2.slope():
+        return False
+    a1 = line1.slope()
+    a2 = line2.slope()
+    if line1.point1[0] != 0:
+        b1 = (line1.point1[1] - (line1.slope() * line1.point1[0]))
+    elif line1.point2[0] != 0:
+        b1 = (line1.point2[1] - (line1.slope() * line1.point2[0]))
+    else:
+        return False
+    if line2.point1[0] != 0:
+        b2 = (line2.point1[1] - (line2.slope() * line2.point1[0]))
+    elif line1.point2[0] != 0:
+        b2 = (line2.point2[1] - (line2.slope() * line2.point2[0]))
+    else:
+        return False
+    x = ((b1 - b2) / (a2 - a1))
+    y = a1 * x + b1
     return [x, y]
 
 
@@ -424,13 +430,11 @@ def recursion_maze(start_point: list, finish_point: list, passed_points: list[li
     return recursion_maze(close_point, finish_point, passed_points)
 
 
-
-
 def connected(point1: list, point2: list):
     global Lines
     for line in Lines:
         if line.point1 == point1 or line.point1 == point2:
-            if line. point2 == point1 or line.point2 == point2:
+            if line.point2 == point1 or line.point2 == point2:
                 return True
     return False
 
@@ -445,6 +449,32 @@ def rebuild_points():
         worthno_points.append(point)
     Points = worthno_points
 
+
+def fine_make_a_file():
+    global Points, Faces
+    file_string = """CubePoints = [\n"""
+    for point in Points:
+        file_string = file_string + str(point)
+        if Points.index(point) != len(Points) - 1:
+            file_string = file_string + ",\n"
+        else:
+            file_string = file_string + "];\n"
+    file_string = file_string + "\n"
+    file_string = file_string + "CubeFaces = [\n"
+    for face in Faces:
+        file_string = file_string + str(face)
+        if Faces.index(face) != len(Faces) - 1:
+            file_string = file_string + ",\n"
+        else:
+            file_string = file_string + "];\n"
+    file_string = file_string + "\n"
+
+    file_string = file_string + "polyhedron( CubePoints, CubeFaces );"
+    file_to_write = open("house.scad", 'w')
+    file_to_write.write(file_string)
+    file_to_write.close()
+
+
 if __name__ == '__main__':
     Points = list(find_points(f))
     Faces = list(find_faces(f))
@@ -457,13 +487,10 @@ if __name__ == '__main__':
     setup_angles(Points)
 
     find_lines(Lines)
-#    for line in Lines:
-#        print(line.point1, line.point2, line.beginning, line.border)
     connect_roof_points()
 
     rebuild_points()
     new_faces()
-    print(Points)
-    print(Faces)
     if drawing:
         plt.show()
+    fine_make_a_file()
