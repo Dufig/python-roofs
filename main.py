@@ -3,11 +3,11 @@ import matplotlib.pyplot as plt  # Only used for graphing
 import math
 
 height = 0
-f = open("motylek.scad", "r")
+f = open("U_house.scad", "r")
 f = f.read()
 drawing = True
 roof_points = []
-rounding_error = 0.000000000000005
+rounding_error = 0.00000000000005
 
 
 class Line:
@@ -25,13 +25,13 @@ class Line:
                 slope = (self.point2[1] - self.point1[1]) / (self.point2[0] - self.point1[0])
                 return slope
             except ZeroDivisionError:
-                return abs((self.point2[1] - self.point1[1]) / (abs(self.point2[1] - self.point1[1]))) * 922336854775807
+                return abs((self.point2[1] - self.point1[1]) / (abs(self.point2[1] - self.point1[1]))) * 999999999999999
         else:
             try:
                 slope = (self.point1[1] - self.point2[1]) / (self.point1[0] - self.point2[0])
                 return slope
             except ZeroDivisionError:
-                return abs((self.point1[1] - self.point2[1]) / (abs(self.point1[1] - self.point2[1]))) * 922336854775807
+                return abs((self.point1[1] - self.point2[1]) / (abs(self.point1[1] - self.point2[1]))) * 999999999999999
 
     def __eq__(self, other):
         if self.point1 == other.point1 and self.point2 == other.point2 and self.beginning == \
@@ -51,9 +51,9 @@ def draw(points: list):
     xs = []
     ys = []
     colors = ['m']
-    for point in points:
-        xs.append(point[0])
-        ys.append(point[1])
+    for top_point in points:
+        xs.append(top_point[0])
+        ys.append(top_point[1])
 
     # Select length of axes and the space between tick labels
     xmin, xmax, ymin, ymax = -15, 15, -15, 15
@@ -63,14 +63,16 @@ def draw(points: list):
     fig, ax = plt.subplots(figsize=(20, 20))
     ax.scatter(xs, ys, c=colors)
 
-    for point in points:
-        if point == points[0]:
-            ax.plot([point[0], points[points.index(point) + 1][0]], [point[1], points[points.index(point) + 1][1]],
+    for line_point in points:
+        if line_point == points[0]:
+            ax.plot([line_point[0], points[points.index(line_point) + 1][0]], [line_point[1],
+                                                                               points[points.index(line_point) + 1][1]],
                     c='m')
-        elif point == points[len(points) - 1]:
-            ax.plot([point[0], points[0][0]], [point[1], points[0][1]], c='m')
+        elif line_point == points[len(points) - 1]:
+            ax.plot([line_point[0], points[0][0]], [line_point[1], points[0][1]], c='m')
         else:
-            ax.plot([point[0], points[points.index(point) + 1][0]], [point[1], points[points.index(point) + 1][1]],
+            ax.plot([line_point[0], points[points.index(line_point) + 1][0]], [line_point[1],
+                                                                               points[points.index(line_point) + 1][1]],
                     c='m')
 
     # Set identical scales for both axes
@@ -219,13 +221,15 @@ def find_angle(a: list, mid: list, c: list):
     if ratio != 1:
         xc = xc * ratio
         yc = yc * ratio
-    Lines.append(Line([xc + xa + xmid, ya + yc + ymid, height], [- xc - xa + xmid, - ya - yc + ymid, height], [xmid, ymid, zmid],
-                      False, False))
-    return Line([xc + xa + xmid, ya + yc + ymid, height], [- xc - xa + xmid, - ya - yc + ymid, height], [xmid, ymid, zmid], False,
+    return Line([xc + xa + xmid, ya + yc + ymid, height], [- xc - xa + xmid, - ya - yc + ymid, height],
+                [xmid, ymid, zmid], False,
                 False)
+
+
 '''
 Line([xc + xa + xmid, ya + yc + ymid, height], [- xc - xa + xmid, - ya - yc + ymid, height],
                 [xmid, ymid, height], False, False)'''
+
 
 def border_lines(points: list) -> list:
     lines = []
@@ -242,11 +246,13 @@ def setup_angles(points: list):
     # Just a setup for the find_angle function.
     for point in points:
         if points.index(point) == 0:
-            find_angle(points[len(points) - 1], points[0], points[1])
+            line = find_angle(points[len(points) - 1], points[0], points[1])
         elif points.index(point) == len(points) - 1:
-            find_angle(points[len(points) - 2], points[len(points) - 1], points[0])
+            line = find_angle(points[len(points) - 2], points[len(points) - 1], points[0])
         else:
-            find_angle(points[points.index(point) - 1], points[points.index(point)], points[points.index(point) + 1])
+            line = find_angle(points[points.index(point) - 1], points[points.index(point)],
+                              points[points.index(point) + 1])
+        Lines.append(line)
 
 
 def find_lines():
@@ -321,7 +327,6 @@ def find_lines():
                 temp_points.append(intersect)
                 plt.scatter(intersect[0], intersect[1], c='r')
 
-
     for drawn_line in true_lines:
         if Points.count(drawn_line.point2) == 0:
             roof_points.append(drawn_line.point2)
@@ -334,7 +339,6 @@ def find_lines():
                 axis_line.point1 = true_line.point1
                 axis_line.point2 = true_line.point2
                 draw_line(axis_line, 'r')
-
 
 
 def are_closest(angle_line: Line, cool_line: Line) -> bool:
@@ -362,7 +366,7 @@ def are_closest(angle_line: Line, cool_line: Line) -> bool:
                 if not line_intersecting(second_line, cool_line):
                     return True
                 return distance(line_intersecting(second_line, cool_line), cool_line.beginning) \
-                    > distance(line_intersecting(angle_line, cool_line), cool_line.beginning)
+                       > distance(line_intersecting(angle_line, cool_line), cool_line.beginning)
 
 
 def draw_line(aline: Line, color):
@@ -400,14 +404,14 @@ def connect_roof_points():
     global roof_points, Points, Lines, height, unfinished_lines
     if len(roof_points) == 2 and len(unfinished_lines) == 0:
         Lines.append(Line(roof_points[0], roof_points[1], roof_points[0], False, True))
-        #draw_line(Lines[len(Lines) - 1], 'r')
+        draw_line(Line(roof_points[0], roof_points[1], roof_points[0], False, True), 'r')
+        # draw_line(Lines[len(Lines) - 1], 'r')
         if roof_points[0] not in Points:
             Points.append(roof_points[0])
         if roof_points[1] not in Points:
             Points.append(roof_points[1])
         return None
     roof_points = clear_doubles(roof_points)
-    print(roof_points, "roof points")
     delete_points = []
     add_points = []
     for point in roof_points:
@@ -424,42 +428,103 @@ def connect_roof_points():
                         bordering_lines.append(border_line)
                     else:
                         bordering_lines.remove(border_line)
-        #for line in Lines:
-            #print(line)
-        #print(" ")
-        if len(bordering_lines) == 2:
-            line1 = bordering_lines[0]
-            line2 = bordering_lines[1]
-            if line1.slope() != line2.slope():
-                roof_line = find_angle(line1.point1, line_intersecting(line1, line2), line2.point2)
-                print(roof_line, "ruff")
-                if distance(roof_line.point2, point) > distance(roof_line.point1, point):
-                    roof_line.point1 = point
-                    roof_line.beginning = point
-                else:
-                    roof_line.point2 = point
-                    roof_line.beginning = point
 
-                #roof_line.beginning = point
-                #roof_line = shorten_line(roof_line, point)
-                print(roof_line, "ruff")
+        if len(bordering_lines) == 2:
+            if not abs(Lines.index(bordering_lines[0]) - Lines.index(bordering_lines[1])) == 1:
+                line1 = bordering_lines[0]
+                line2 = bordering_lines[1]
+                if line1.slope() != line2.slope():
+                    roof_line = find_angle(line1.point1, line_intersecting(line1, line2), line2.point2)
+                    if distance(roof_line.point2, point) > distance(roof_line.point1, point):
+                        roof_line.point1 = point
+                        roof_line.beginning = point
+                    else:
+                        roof_line.point2 = point
+                        roof_line.beginning = point
+                else:
+                    if connected(line1.point1, point):
+                        roof_line = Line(point, [point[0] + line1.point2[0] - line1.point1[0], point[1] + line1.point2[1] -
+                                                 line1.point1[1], height], point, False, False)
+                    elif connected(line1.point2, point):
+                        roof_line = Line(point, [point[0] + line1.point1[0] - line1.point2[0], point[1] + line1.point1[1] -
+                                                 line1.point2[1], height], point, False, False)
             else:
-                if connected(line1.point1, point):
-                    roof_line = Line(point, [point[0] + line1.point2[0] - line1.point1[0], point[1] + line1.point2[1] -
-                                             line1.point1[1], height], point, False, False)
-                elif connected(line1.point2, point):
-                    roof_line = Line(point, [point[0] + line1.point1[0] - line1.point2[0], point[1] + line1.point1[1] -
-                                             line1.point2[1], height], point, False, False)
-        #for line in Lines:
-            #print(line)
-        #print(" ")
+                check_points = []
+
+                for check_line in bordering_lines:
+                    if check_line.point1 not in check_points:
+                        check_points.append(check_line.point1)
+                    else:
+                        check_points.remove(check_line.point1)
+                        corner_point = check_line.point1
+                    if check_line.point2 not in check_points:
+                        check_points.append(check_line.point2)
+                    else:
+                        check_points.remove(check_line.point2)
+                        corner_point = check_line.point2
+                for connecting_line in Lines:
+                    if not connecting_line.border and connecting_line.final and (connecting_line.point1 == point
+                                                                                 or connecting_line.point2 == point):
+                        if not (connecting_line.point1 == corner_point or connecting_line.point2 == corner_point):
+                            if connecting_line.point1 == point:
+                                bad_point = connecting_line.point2
+                            elif connecting_line.point2 == point:
+                                bad_point = connecting_line.point1
+                len_check = 0   # this could lead to a problem, if there is a bug check this part
+                for check_point in check_points:   # its good as a placeholder though
+                    if distance(check_point, bad_point) > len_check:
+                        len_check = distance(check_point, bad_point)
+                        good_point = check_point
+                for intersecting_line in Lines:
+                    if intersecting_line.border and (intersecting_line.point1 == good_point or intersecting_line.point2 == good_point) and (intersecting_line.point1 == corner_point or intersecting_line.point2 == corner_point):
+                        intersect_line = intersecting_line
+                        break
+                for second_line in Lines:
+                    if second_line.border and line_intersecting(second_line, intersect_line) and \
+                            not second_line == intersect_line and second_line.point1 != corner_point and second_line.point2 != corner_point:
+                        if corner_point[0] <= good_point[0]:
+                            if corner_point[1] <= good_point[1]:
+                                if line_intersecting(second_line, intersect_line)[0] <= corner_point[0] and \
+                                        line_intersecting(second_line, intersect_line)[1] <= corner_point[1]:
+                                    bor_itr_line = second_line
+                            if corner_point[1] >= good_point[1]:
+
+                                if line_intersecting(second_line, intersect_line)[0] <= corner_point[0] and \
+                                        line_intersecting(second_line, intersect_line)[1] >= corner_point[1]:
+                                    bor_itr_line = second_line
+                        if corner_point[1] < good_point[1]:
+                            if corner_point[0] <= good_point[0]:
+                                if line_intersecting(second_line, intersect_line)[1] < corner_point[1] and \
+                                        line_intersecting(second_line, intersect_line)[0] <= corner_point[0]:
+                                    bor_itr_line = second_line
+                            if corner_point[0] >= good_point[0]:
+                                if line_intersecting(second_line, intersect_line)[1] < corner_point[1] and \
+                                        line_intersecting(second_line, intersect_line)[0] >= corner_point[0]:
+                                    bor_itr_line = second_line
+
+                if distance(bor_itr_line.point1, bad_point) < distance(bor_itr_line.point2, bad_point):
+                    roof_line = find_angle(bor_itr_line.point2, line_intersecting(bor_itr_line, intersect_line), corner_point)
+                else:
+                    roof_line = find_angle(bor_itr_line.point1, line_intersecting(bor_itr_line, intersect_line), corner_point)
+                if distance(point, roof_line.point1) < distance(point, roof_line.point2):
+                    roof_line.beginning = point
+                    roof_line.point2 = point
+                else:
+                    roof_line.beginning = point
+                    roof_line.point1 = point
         len_a = 9999999999
+        failsafe = False
         for passing_line in Lines:
             if line_intersecting(passing_line, roof_line) and not passing_line.final:
                 if distance(roof_line.beginning, line_intersecting(passing_line, roof_line)) < len_a:
                     interline = passing_line
                     len_a = distance(roof_line.beginning, line_intersecting(passing_line, roof_line))
-        #print(roof_line, "ruff")
+        for over_line in Lines:
+            if line_intersecting(over_line, roof_line) and over_line.border:
+                if distance(roof_line.beginning, line_intersecting(over_line, roof_line)) < len_a:
+                    failsafe = True #it intersects the line *behind* the roof line, rendering this part of code useless
+        if failsafe:
+            print("failseaf")
         intersect = line_intersecting(interline, roof_line)
         interline.point1 = interline.beginning
         interline.point2 = intersect
@@ -470,16 +535,9 @@ def connect_roof_points():
         roof_points.remove(roof_line.beginning)
         add_points.append(intersect)
         draw_line(roof_line, 'r')
-        print(roof_line)
         draw_line(interline, 'r')
         plt.scatter(intersect[0], intersect[1], c='r')
         Lines.append(roof_line)
-
-        print(interline)
-        print(roof_line, "ruff")
-        for line in Lines:
-            print(line)
-        print(" ")
     for point in roof_points:
         for delete in delete_points:
             if point == delete:
@@ -490,9 +548,6 @@ def connect_roof_points():
             roof_points.append(point)
             add_points.remove(point)
     unfinished_lines = find_unfinished_lines()
-    for line in unfinished_lines:
-        print(line, "unf")
-        pass
     if len(unfinished_lines) != 0 or len(roof_points) != 0:
         connect_roof_points()
 
@@ -629,18 +684,20 @@ if __name__ == '__main__':
 
     find_lines()
     unfinished_lines = find_unfinished_lines()
-
+    #for line in Lines:
+        #print(line)
+        #draw_line(line, 'y')
     try:
         connect_roof_points()
     except:
         print("rip")
 
-    for line in Lines:
-        #print(line)
-        draw_line(line, 'y')
-    #rebuild_points()
-    #new_faces()
+
+    #for point in Points:
+        #print(point)
+    rebuild_points()
+    new_faces()
     if drawing:
         plt.show()
 
-    #fine_make_a_file()
+    fine_make_a_file()
