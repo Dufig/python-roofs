@@ -3,13 +3,14 @@ import matplotlib.pyplot as plt  # Only used for graphing
 import math
 
 height = 0
-f = open("stair_house.scad", "r")
+f = open("6stran_podstava.scad", "r")
 f = f.read()
-drawing = False
-printing = False
+drawing = True
+printing = True
 roof_points = []
 used_lines = []
 rounding_error = 0.00000000000005
+angle = math.radians(45)
 
 
 class Line:
@@ -332,6 +333,7 @@ def find_lines():
                 first_line = first_pair[0]
                 second_line = second_pair[0]
                 intersect = list(line_intersecting(first_line, second_line))
+                intersect[2] = math.tan(angle) * distance(intersect, first_line.beginning) + first_line.beginning[2]
                 first_line.point1 = first_line.beginning
                 first_line.point2 = intersect
                 first_line.final = True
@@ -416,7 +418,7 @@ def connect_roof_points():
 
     a shortcut at the beginning for when there are only two points to connect.
     """
-    global roof_points, Points, Lines, height, unfinished_lines, used_lines
+    global roof_points, Points, Lines, height, unfinished_lines, used_lines, angle
     refresh_encloseure()
     if len(roof_points) == 2 and len(unfinished_lines) == 0:
         Lines.append(Line(roof_points[0], roof_points[1], roof_points[0], False, True))
@@ -547,6 +549,7 @@ def connect_roof_points():
                     interline = passing_line
                     len_a = distance(roof_line.beginning, line_intersecting(passing_line, roof_line))
         intersect = line_intersecting(interline, roof_line)
+        intersect[2] = math.tan(angle) * distance(intersect, interline.beginning) + interline.beginning[2]
         interline.point1 = interline.beginning
         interline.point2 = intersect
         interline.final = True
@@ -722,7 +725,6 @@ def fine_make_a_file():
         else:
             file_string = file_string + "];\n"
     file_string = file_string + "\n"
-
     file_string = file_string + "polyhedron( CubePoints, CubeFaces );"
     file_to_write = open("house.scad", 'w')
     file_to_write.write(file_string)
@@ -746,15 +748,18 @@ if __name__ == '__main__':
     find_lines()
     unfinished_lines = find_unfinished_lines()
     connect_roof_points()
-
+    #fix_height()
     # for point in Points:
     # print(point)
     #for line in Lines:
-        # print(line)
+        #print(line)
         #draw_line(line, 'y')
     rebuild_points()
     new_faces()
+
+    fine_make_a_file()
+
     if drawing:
         plt.show()
 
-    fine_make_a_file()
+
