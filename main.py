@@ -3,10 +3,10 @@ import matplotlib.pyplot as plt  # Only used for graphing
 import math
 
 height = 0
-f = open("6stran_podstava.scad", "r")
+f = open("U_house.scad", "r")
 f = f.read()
 drawing = True
-printing = True
+printing = False
 roof_points = []
 used_lines = []
 rounding_error = 0.00000000000005
@@ -333,6 +333,8 @@ def find_lines():
                 first_line = first_pair[0]
                 second_line = second_pair[0]
                 intersect = list(line_intersecting(first_line, second_line))
+                if not check_in_shape(intersect):
+                    continue
                 intersect[2] = math.tan(angle) * distance(intersect, first_line.beginning) + first_line.beginning[2]
                 first_line.point1 = first_line.beginning
                 first_line.point2 = intersect
@@ -545,10 +547,19 @@ def connect_roof_points():
         len_a = 9999999999
         for passing_line in Lines:
             if line_intersecting(passing_line, roof_line) and not passing_line.final and not passing_line.border:
-                if distance(roof_line.beginning, line_intersecting(passing_line, roof_line)) < len_a:
+                if distance(roof_line.beginning, line_intersecting(passing_line, roof_line)) < len_a and\
+                        check_in_shape(line_intersecting(passing_line, roof_line)):
                     interline = passing_line
                     len_a = distance(roof_line.beginning, line_intersecting(passing_line, roof_line))
         intersect = line_intersecting(interline, roof_line)
+        if roof_line.beginning not in Points:
+            Points.append(roof_line.beginning)
+            """
+              There was a bug involving a point getting into roof points but the going missing while never getting into 
+              Points, this is there as a failsafe. The point was a correct intersect though.
+              """
+        if not check_in_shape(intersect):
+            continue
         intersect[2] = math.tan(angle) * distance(intersect, interline.beginning) + interline.beginning[2]
         interline.point1 = interline.beginning
         interline.point2 = intersect
@@ -557,12 +568,8 @@ def connect_roof_points():
         roof_line.point1 = roof_line.beginning
         roof_line.final = True
         roof_points.remove(roof_line.beginning)
-        if roof_line.beginning not in Points:
-            Points.append(roof_line.beginning)
-            """
-            There was a bug involving a point getting into roof points but the going missing while never getting into 
-            Points, this is there as a failsafe. The point was a correct intersect though.
-            """
+
+
         add_points.append(intersect)
         draw_line(roof_line, 'r')
         draw_line(interline, 'r')
@@ -582,6 +589,32 @@ def connect_roof_points():
         connect_roof_points()
 
 
+def check_in_shape(point: list) -> bool:
+    crossed_lines = []
+    point_line = Line(point, [point[0] + 10, point[1], point[2]], point, False, False)
+    for crossed_line in Lines:
+        if line_intersecting(point_line, crossed_line) and crossed_line.border:
+            if line_intersecting(point_line, crossed_line)[0] < point[0]:
+                continue
+            if crossed_line.point1[0] == crossed_line.point2[0]:
+                if crossed_line.point1[1] - rounding_error <= line_intersecting(point_line, crossed_line)[1] <= \
+                        crossed_line.point2[1] or crossed_line.point1[1] - rounding_error >=\
+                        line_intersecting(point_line, crossed_line)[1] >= crossed_line.point2[1]:
+                    crossed_lines.append(crossed_line)
+            elif crossed_line.point1[0] <= crossed_line.point2[0]:
+                if crossed_line.point[0] - rounding_error <= line_intersecting(point_line, crossed_line)[0] <= \
+                     crossed_line.point[0]:
+                    crossed_lines.append(crossed_line)
+            elif crossed_line.point1[0] >= crossed_line.point2[0]:
+                if crossed_line.point[0] - rounding_error >= line_intersecting(point_line, crossed_line)[0] >= \
+                        crossed_line.point[0]:
+                    crossed_lines.append(crossed_line)
+
+    if len(crossed_lines) % 2 == 0:
+        return False
+    return True
+
+
 def refresh_encloseure():
     global Lines
     for refresh_line in Lines:
@@ -591,7 +624,7 @@ def refresh_encloseure():
 
 def check_enclosed(border_line: Line) -> bool:
     global Lines
-    close_points = recursion_maze(border_line.point1, border_line.point2, [border_line.point1], 0)
+    close_points = recursion_maze(border_line.point1, border_line.point2, [border_line.point1], 0, False)
     if not close_points:
         return False
     close_points.append(border_line.point2)
@@ -648,22 +681,23 @@ def new_faces():
         if line.border:
             true_lines.append(line)
     for border_line in true_lines:
-        face_points = [border_line.point1]
         indexes = []
-        recursion = list(recursion_maze(border_line.point2, border_line.point1, [border_line.point2], 0))
+        recursion = list(recursion_maze(border_line.point2, border_line.point1, [border_line.point2], 0, False))
+        recursion.append(border_line.point1)
+        print(border_line)
+        print(recursion)
+        print(" ")
         for point in recursion:
-            face_points.append(point)
-        for point in face_points:
             indexes.append(Points.index(point))
         Faces.append(indexes)
 
 
-def recursion_maze(start_point: list, finish_point: list, passed_points: list[list], i: int):
+def recursion_maze(start_point: list, finish_point: list, passed_points: list[list], i: int, can_use_border: bool):
     i = i + 1
     if i > 500:
         return False
     global Points
-    if connected(start_point, finish_point) and start_point not in passed_points:
+    if advanced_connected(start_point, finish_point, can_use_border) and start_point not in passed_points:
         passed_points.append(start_point)
         return passed_points
     connect_pointss = []
@@ -673,7 +707,7 @@ def recursion_maze(start_point: list, finish_point: list, passed_points: list[li
             continue
         if point in passed_points:
             continue
-        if connected(point, start_point):
+        if advanced_connected(point, start_point, can_use_border):
             connect_pointss.append(point)
 
     for point in connect_pointss:
@@ -684,7 +718,7 @@ def recursion_maze(start_point: list, finish_point: list, passed_points: list[li
             close_point = point
     if start_point not in passed_points:
         passed_points.append(start_point)
-    return recursion_maze(close_point, finish_point, passed_points, i)
+    return recursion_maze(close_point, finish_point, passed_points, i, can_use_border)
 
 
 def connected(point1: list, point2: list):
@@ -694,6 +728,19 @@ def connected(point1: list, point2: list):
             if line.point2 == point1 or line.point2 == point2:
                 return True
     return False
+
+
+def advanced_connected(point1: list, point2: list, border_lines: bool):
+    global Lines
+    for line in Lines:
+        if not border_lines:
+            if line.border:
+                continue
+        if line.point1 == point1 or line.point1 == point2:
+            if line.point2 == point1 or line.point2 == point2:
+                return True
+    return False
+
 
 
 def distance(point1: list, point2: list):
@@ -747,8 +794,10 @@ if __name__ == '__main__':
 
     find_lines()
     unfinished_lines = find_unfinished_lines()
+
     connect_roof_points()
-    #fix_height()
+
+
     # for point in Points:
     # print(point)
     #for line in Lines:
