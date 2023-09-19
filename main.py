@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt  # Only used for graphing
 import math
 
 height = 0
-f = open("U_house.scad", "r")
+f = open("S_house_flat.scad", "r")
 f = f.read()
 drawing = True
 printing = False
@@ -59,7 +59,7 @@ def draw(points: list):
         ys.append(top_point[1])
 
     # Select length of axes and the space between tick labels
-    xmin, xmax, ymin, ymax = -15, 15, -15, 15
+    xmin, xmax, ymin, ymax = -25, 25, -25, 25
     ticks_frequency = 1
 
     # Plot points
@@ -168,9 +168,20 @@ def find_faces(no_list: str) -> list:
 
 def find_height(no_list: str):
     global height
-    if no_list.count("height_coefficient") != 1:
+    if no_list.count("roof_height") != 1:
         return None
-    no_list = no_list[no_list.index("height_coefficient"):]
+    no_list = no_list[no_list.index("roof_height"):]
+    no_list = no_list[no_list.index("=") + 1:]
+    no_list = no_list[:no_list.index(";")]
+    no_list = float(no_list)
+    return no_list
+
+
+def find_roof_angle(no_list: str):
+    global angle
+    if no_list.count("roof_angle") != 1:
+        return None
+    no_list = no_list[no_list.index("roof_angle"):]
     no_list = no_list[no_list.index("=") + 1:]
     no_list = no_list[:no_list.index(";")]
     no_list = float(no_list)
@@ -217,6 +228,32 @@ def worthless_points(points: list) -> list:
     for point in bad_points:
         points.remove(point)
     return bad_points
+
+
+def add_top_points(points: list[list], tallness: int or float) -> list:
+    top_points = []
+    new_point = []
+    for point in points:
+        new_point = [point[0], point[1], point[2] + tallness]
+        top_points.append(new_point)
+    return top_points
+
+
+def create_faces(low_points: list[list]):
+    global Faces
+    face = []
+    if len(Faces) != 1:
+        for point in low_points:
+            face.append(low_points.index(point))
+        Faces = [face]
+    face = []
+    for point in low_points:
+        if low_points.index(point) == len(low_points) - 1:
+            face = [low_points.index(point), 2 * len(low_points) - 1, len(low_points),  0]
+        else:
+            face = [low_points.index(point), len(low_points), len(low_points) + 1, low_points.index(point) + 1]
+        Faces.append(face)
+
 
 
 def find_angle(a: list, mid: list, c: list):
@@ -531,7 +568,7 @@ def connect_roof_points():
                                         line_intersecting(intersect_line, second_line)[0] + rounding_error >= \
                                         corner_point[0]:
                                     bor_itr_line = second_line
-
+                print(good_point, bad_point)
                 if distance(bor_itr_line.point1, bad_point) < distance(bor_itr_line.point2, bad_point):
                     roof_line = find_angle(bor_itr_line.point2, line_intersecting(intersect_line, bor_itr_line),
                                            corner_point)
@@ -684,9 +721,6 @@ def new_faces():
         indexes = []
         recursion = list(recursion_maze(border_line.point2, border_line.point1, [border_line.point2], 0, False))
         recursion.append(border_line.point1)
-        print(border_line)
-        print(recursion)
-        print(" ")
         for point in recursion:
             indexes.append(Points.index(point))
         Faces.append(indexes)
@@ -781,10 +815,21 @@ def fine_make_a_file():
 
 
 if __name__ == '__main__':
-    Points = list(find_points(f))
-    Faces = list(find_faces(f))
-    find_height(f)
-    Faces = list(not_top_faces(Points, Faces))
+    if f.find("roof_height") < 0:
+        Points = list(find_points(f))
+        Faces = list(find_faces(f))
+        Faces = list(not_top_faces(Points, Faces))
+    else:
+        Points = list(find_points(f))
+        Faces = list(find_faces(f))
+        height = find_height(f)
+        create_faces(Points)
+        top_points = list(add_top_points(Points, height))
+        for top_point in top_points:
+            Points.append(top_point)
+        if f.find("roof_angle") > 0:
+            angle = find_roof_angle(f)
+
     worthno_points = worthless_points(Points)
     Lines = list(border_lines(Points))
 
@@ -797,6 +842,12 @@ if __name__ == '__main__':
 
     connect_roof_points()
 
+    for line in Lines:
+        #print(line)
+        draw_line(line, 'y')
+    print(Faces)
+    if drawing:
+        plt.show()
 
     # for point in Points:
     # print(point)
@@ -808,7 +859,5 @@ if __name__ == '__main__':
 
     fine_make_a_file()
 
-    if drawing:
-        plt.show()
 
 
