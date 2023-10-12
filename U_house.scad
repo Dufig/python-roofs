@@ -27,7 +27,5 @@ CubeFaces = [
   [6,14,15,7],
   [7,15,8,0],
   [8,9,10,11,12,13,14,15]];
-
-height_coefficient = 0.75;
   
 polyhedron( CubePoints, CubeFaces );
