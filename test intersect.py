@@ -516,6 +516,9 @@ def clear_doubles(points: list) -> list:
 
 def connect_roof_points():
     global roof_points, Points, Lines, height, unfinished_lines, used_lines, angle
+
+
+
     print(roof_points, "roof")
     if len(roof_points) <= 2 and len(unfinished_lines) == 0:
         refresh_encloseure()
